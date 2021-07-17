@@ -12,14 +12,9 @@ smp.init_printing()
 def oneDReduction(function, variableList, boundsList, nList, currentDim): # boundsList is a len n list of bound pairs, nList is a len n list
 
     ## variableList, boundsList, nList should be ordered with the outer-most values first (ie. the ones to do first go last)
-
-    k1, k2, k3, k4, k5, k6, k7 = smp.symbols('k1, k2, k3, k4, k5, k6, k7')
     
-    kList = [k1, k2, k3, k4, k5, k6, k7]
+    k = smp.symbols(f'k_{currentDim}')
     
-    #k = smp.symbols(f'k_{currentDim}')
-    
-    k = kList[currentDim - 1]
     
     bounds = boundsList[-1]
     n = nList[-1]
@@ -35,32 +30,22 @@ def oneDReduction(function, variableList, boundsList, nList, currentDim): # boun
     approx2 = function.subs(variable, (a + k) * ((b - a) / n))
 
     approx = approxPre * (approx1 + smp.Sum(approx2, (k, 1, n - 1)))
-    '''
-    print ()
-    smp.pprint (approx)
-    print ()
-    '''
-    
+
     currentDim -= 1
     
     if currentDim == 0:
         print (f"Reached dimension {currentDim}")
-        
-        print (approx.doit())
-        
-        return type(approx)
+
+        return approx
     
     else:
         print (f"Now working on dimension {currentDim}")
         
         variableList = variableList[0:currentDim]
-        print (variableList)
         boundsList = boundsList[0:currentDim]
-        print (boundsList)
         nList = nList[0:currentDim]
-        print (nList)
         
-        oneDReduction(approx, variableList, boundsList, nList, currentDim)
+        return oneDReduction(approx, variableList, boundsList, nList, currentDim)
 
 
 def main():
@@ -95,7 +80,7 @@ def main():
     
     print ()
     print ("Approximate:")
-    smp.pprint(fullSum)
+    smp.pprint(fullSum.doit())
 
 
 if __name__ == "__main__":
