@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jul 16 20:49:21 2021
+Created on Sat Jul 17 15:03:36 2021
 
 @author: jakes
 """
@@ -9,29 +9,48 @@ import sympy as smp
 smp.init_printing()
 
 
-def oneDReduction(function, variable, bounds, n, currentDim): # bounds is a len 2 list
+def oneDReduction(function, variableList, boundsList, nList, currentDim): # boundsList is a len n list of bound pairs, nList is a len n list
 
-    k1, k2, k3, k4, k5 = smp.symbols('k1 k2 k3 k4 k5')
+    ## variableList, boundsList, nList should be ordered with the outer-most values first (ie. the ones to do first go last)
     
-    k = [k1, k2, k3, k4, k5]
+    k = smp.symbols(f'k_{currentDim}')
     
-    dummy = k[currentDim]
-
+    
+    bounds = boundsList[-1]
+    n = nList[-1]
+    variable = variableList[-1]
+    
     a = bounds[0]
     b = bounds[1]
     
+    ## Need to include handling for if the function does NOT explicitly depend on one of the variables
 
     approxPre = (b - a) / n
     approx1 = (function.subs(variable, a) + function.subs(variable, b)) / 2
-    approx2 = function.subs(variable, (a + dummy) * ((b - a) / n))
+    approx2 = function.subs(variable, (a + k) * ((b - a) / n))
 
-    approx = approxPre * (approx1 + smp.Sum(approx2, (dummy, 1, n - 1)))
+    approx = approxPre * (approx1 + smp.Sum(approx2, (k, 1, n - 1)))
 
-    return approx
+    currentDim -= 1
+    
+    if currentDim == 0:
+        print (f"Reached dimension {currentDim}")
+
+        return approx
+    
+    else:
+        print (f"Now working on dimension {currentDim}")
+        
+        variableList = variableList[0:currentDim]
+        boundsList = boundsList[0:currentDim]
+        nList = nList[0:currentDim]
+        
+        return oneDReduction(approx, variableList, boundsList, nList, currentDim)
+
 
 def main():
 
-    x, y, a, b = smp.symbols('x y a b')
+    x, y, z = smp.symbols('x y z')
         
     s, T, m, v, k = smp.symbols('sigma T m_a v k')
     
@@ -41,22 +60,27 @@ def main():
     
     numbersMaxwell = maxwell.subs([(T, 1E1), (k, 1.38E-23), (m, 1.67E-27)])
     
-    function = numbersMaxwell * numbersMaxwell.subs(x, y)
+    # function = numbersMaxwell * numbersMaxwell.subs(x, y) * numbersMaxwell.subs(x, z)
     
-    bounds = [0, 5000]
-    n = 100000
+    function = x * y # * z
     
-    exact = smp.Integral(function, (x, 0, 5000), (y, 0, 5000))
+    bounds = [[0, 10], [0, 10]]
+    n = [50, 50]
+    variables = [y, x]
     
-    oneD = oneDReduction(function, x, bounds, n, 2)
     
-    fullSum = oneDReduction(oneD, y, bounds, n, 1)
+    exact = smp.Integral(function, (x, 0, 10), (y, 0, 10))
     
     print ("Exact:")
-    smp.pprint (exact.doit().evalf())
+    smp.pprint (exact.doit())
+    print ()
+    
+    
+    fullSum = oneDReduction(function, variables, bounds, n, 2)
+    
     print ()
     print ("Approximate:")
-    smp.pprint(fullSum.doit().evalf())
+    smp.pprint(fullSum.doit())
 
 
 if __name__ == "__main__":
